@@ -1,196 +1,161 @@
 from datetime import datetime
-import os
 
 FILE_NAME = "diary.txt"
 
-
-# Load notes from file
-def load_notes():
+#read all notes from the file
+def read_notes():
     notes = []
 
-    if os.path.exists(FILE_NAME):
+    try:
         with open(FILE_NAME, "r") as file:
             for line in file:
                 line = line.strip()
 
                 if "|" in line:
                     date, text = line.split("|", 1)
-
-                    notes.append({
-                        "date": date,
-                        "text": text
-                    })
-
+                    notes.append((date, text))
+    except FileNotFoundError:
+        pass
     return notes
 
+#Add a new note
+def add_note():
+    date = input("Enter Date(yyyy-mm-dd): ")
 
-# Save notes to file
-def save_notes(notes):
-    with open(FILE_NAME, "w") as file:
-        for note in notes:
-            file.write(
-                note["date"] + "|" +
-                note["text"] + "\n"
-            )
-
-
-# Validate date format
-def validate_date(date):
     try:
-        parsed = datetime.strptime(date, "%Y-%m-%d")
-        return parsed.strftime("%Y-%m-%d") == date
+        valid_date = datetime.strptime(date, "%Y-%m-%d")
+
+        if valid_date.strftime("%Y-%m-%d") != date:
+            print("Invalid date, use yyyy-mm-dd.")
+            return
+
     except ValueError:
-        return False
-
-
-# Add a new note
-def add_note(notes):
-
-    date = input("Enter date (YYYY-MM-DD): ").strip()
-
-    if not validate_date(date):
-        print("Invalid date. Use YYYY-MM-DD.")
+        print("Invalid date, Use yyyy-mm-dd.")
         return
 
-    text = input("Enter note text: ").strip()
+    text = input("Enter your note text: ").strip()
 
     if text == "":
         print("Note text cannot be empty.")
         return
 
-    notes.append({
-        "date": date,
-        "text": text
-    })
+    with open(FILE_NAME, "a") as file:
+        file.write(date + "|" + text + "\n")
 
-    save_notes(notes)
+    print("NOTE SAVED.")
 
-    print("Note saved.")
-
-
-# View all notes
-def view_notes(notes):
+#View all notes
+def view_notes():
+    notes = read_notes()
 
     if len(notes) == 0:
         print("No notes found. Your diary is empty.")
         return
 
-    print("\n----- ALL NOTES -----")
+    print("\n===== ALL DIARY NOTES =====")
 
     for i, note in enumerate(notes, start=1):
-        print(
-            i, "|",
-            note["date"], "|",
-            note["text"]
-        )
+        date, text = note
+        print(f"{i} | {date} | {text}")
 
+#Search notes using a keyword
+def search_notes():
+    notes = read_notes()
 
-# Search notes by keyword
-def search_notes(notes):
+    if len(notes) == 0:
+        print("No notes found. Your diary is empty.")
+        return
 
-    keyword = input("Enter keyword to search: ").strip()
+    keyword = input("Enter a keyword to search: ").strip().lower()
 
     if keyword == "":
         print("Search keyword cannot be empty.")
         return
 
-    count = 0
+    found = False
 
-    for i, note in enumerate(notes, start=1):
+    print("\n===== SEARCH RESULTS =====")
 
-        if keyword.lower() in note["text"].lower():
+    for i, note in  enumerate(notes, start=1):
+        date, text = note
 
-            if count == 0:
-                print("\nSearch Results:")
+        if keyword in text.lower():
+            print(f"{i} | {date} | {text}")
+            found = True
 
-            print(
-                i, "|",
-                note["date"], "|",
-                note["text"]
-            )
-
-            count += 1
-
-    if count == 0:
+    if not found:
         print("No matching notes found.")
 
-    else:
-        print("Found", count, "notes")
+# Delete a note using its number
 
-
-# Delete a note
-def delete_note(notes):
+def delete_note():
+    notes = read_notes()
 
     if len(notes) == 0:
         print("No notes found. Your diary is empty.")
         return
 
-    view_notes(notes)
+    print("\n===== ALL DIARY NOTES =====")
+
+    for i, note in enumerate(notes, start=1):
+        date, text = note
+        print(f"{i} | {date} | {text}")
 
     try:
         number = int(input("Enter note number to delete: "))
 
-        if number < 1 or number > len(notes):
-            print("Note number", number, "not found.")
-            return
-
-        notes.pop(number - 1)
-
-        save_notes(notes)
-
-        print(
-            "Note", number,
-            "deleted. Notes left:", len(notes)
-        )
-
     except ValueError:
         print("Invalid note number.")
+        return
+
+    if number < 1 or number > len(notes):
+        print(f"Note number {number} not found.")
+        return
+
+    notes.pop(number - 1)
+
+    with open(FILE_NAME, "w") as file:
+        for note in notes:
+            date, text = note
+            file.write(date + "|" + text + "\n")
+
+    print(f"Note {number} deleted.")
+    print(f"Notes left: {len(notes)}")
 
 
 # Main menu
+
 def main():
-
-    notes = load_notes()
-
     while True:
-
-        print("\n================================")
-        print("   DIGITAL DIARY / NOTES MANAGER")
-        print("================================")
-        print("1. Add")
-        print("2. View all")
-        print("3. Search")
-        print("4. Delete")
+        print("\n===== DIGITAL DIARY =====")
+        print("1. Add Note")
+        print("2. View All Notes")
+        print("3. Search Notes")
+        print("4. Delete Note")
         print("5. Exit")
 
-        choice = input("Enter your choice: ").strip()
+        choice = input("Enter menu option: ")
 
         if choice == "1":
-
-            add_note(notes)
+            add_note()
 
         elif choice == "2":
-
-            view_notes(notes)
+            view_notes()
 
         elif choice == "3":
-
-            search_notes(notes)
+            search_notes()
 
         elif choice == "4":
-
-            delete_note(notes)
+            delete_note()
 
         elif choice == "5":
-
             print("Thank you for using Digital Diary!")
+
             break
 
         else:
+            print("Invalid menu option. Please try again.")
 
-            print("Invalid menu option. Try again.")
-
-
-# Program execution
+#Start the program 
 if __name__ == "__main__":
     main()
